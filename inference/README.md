@@ -14,5 +14,5 @@ We’ve developed a Machine Learning solution to predict the Remaining Useful Li
 # Model Artifacts
 - JSON Response
 ```
-{"24":"less than 15 cycles left "}
+{"24":"less than 15 cycles left"}
 
