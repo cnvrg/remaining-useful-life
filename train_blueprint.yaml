@@ -1,0 +1,224 @@
+title: RUL Train Inference
+version: 1.0.0
+description: Training RUL Model to find out which machines are likely to fail soon
+long_description: This blueprint predicts the remaining useful life of a machine based on the readings from sensors
+
+author: "cnvrg"
+author_email: "libhub@cnvrg.io"
+
+tags:
+  - training
+
+tasks:
+  - title: s3_connector
+    top: 300
+    left: 0
+
+    type: exec
+
+    library: s3-connector15
+    library_version: 1.0.0
+
+    command: python s3_connector.py
+
+    requirements:
+      cpu: 3.5
+      memory: 8
+      gpu: 0
+      hpu: 0
+
+    image: cnvrg/cnvrg:v5.0
+    language: python3
+
+    params:
+      - key: endpoint
+        type: 'categorical'
+        values:
+          - 'http://s3.amazonaws.com download'
+      - key: bucketname
+        type: 'categorical'
+        values:
+          - 'libhub-readme'
+      - key: localdir
+        type: 'categorical'
+        values:
+          - '/cnvrg'
+      - key: prefix
+        type: 'categorical'
+        values:
+          - 'remaining_useful_life_data/'
+          
+  - title: data_preprocessing
+    top: 300
+    left: 250
+
+    type: exec
+
+    library: rul-data-preprocessing
+    library_version: 1.0.0
+
+    command: python3 data_preprocessing.py
+
+    requirements:
+      cpu: 3.5
+      memory: 8
+      gpu: 0
+      hpu: 0
+
+    image: cnvrg/cnvrg:v5.0
+    language: python3
+
+    params:
+      - key: raw_train_data
+        type: 'categorical'
+        values:
+          - '/input/s3_connector/remaining_useful_life_data/raw_train_data.csv'
+      - key: common_letter_numeric
+        type: 'categorical'
+        values:
+          - 's'
+      - key: numeric_features
+        type: 'categorical'
+        values:
+          - 'garbage999'
+      - key: meta_columns
+        type: 'categorical'
+        values:
+          - 'id,cycle'
+      - key: sequence_length
+        type: 'categorical'
+        values:
+          - '50'
+      - key: upper_limit
+        type: 'categorical'
+        values:
+          - '45'  
+      - key: lower_limit
+        type: 'categorical'
+        values:
+          - '15'            
+          
+  - title: cnn
+    top: 300
+    left: 500
+
+    type: exec
+
+    library: rul-cnn
+    library_version: 1.0.0
+
+    command: python3 cnn.py
+
+    requirements:
+      cpu: 3.5
+      memory: 15.5
+      gpu: 0
+      hpu: 0
+
+    image: cnvrg/cnvrg:v5.0
+    language: python3
+
+    params:      
+      - key: x_train
+        type: 'categorical'
+        values:
+          - '/input/data_preprocessing/x_train'
+      - key: y_train
+        type: 'categorical'
+        values:
+          - '/input/data_preprocessing/y_train'     
+      - key: batch_size
+        type: 'categorical'
+        values:
+          - '512'
+      - key: epochs
+        type: 'categorical'
+        values:
+          - '25'          
+      - key: shape_data
+        type: 'categorical'
+        values:
+          - '/input/data_preprocessing/shape_data.csv'          
+          
+  - title: batch_predict
+    top: 100
+    left: 700
+
+    type: exec
+
+    library: rul-batch-predict
+    library_version: 1.0.0
+
+    command: python3 predict.py
+
+    requirements:
+      cpu: 3.5
+      memory: 15.5
+      gpu: 0
+      hpu: 0
+
+    image: cnvrg/cnvrg:v5.0
+    language: python3
+
+    params:
+      - key: x_test
+        type: 'categorical'
+        values:
+          - '/input/s3_connector/remaining_useful_life_data/raw_test_data.csv'     
+      - key: cnn
+        type: 'categorical'
+        values:
+          - '/input/cnn/cnn_model.h5'    
+      - key: shape_data
+        type: 'categorical'
+        values:
+          - '/input/data_preprocessing/shape_data.csv'         
+  - title: inference
+    top: 500
+    left: 700
+
+    # Type must be according to the flow task conventions (data, exec, deploy)
+    type: deploy
+
+    # The library data
+    library: rul-inference
+    library_version: 1.0.0
+
+    command: python3 predict.py
+    kind: webservice
+
+    requirements:
+      cpu: 3.5
+      memory: 8
+      gpu: 0
+      hpu: 0
+
+    image: cnvrg/cnvrg:v5.0
+    language: python3
+    accept_files: True
+
+    file_name: predict.py # the entrypoint file name
+    function_name: predict # the entrypoint function
+    prep_file: '' # preprocess file name
+    prep_function: '' # preprocess function
+    input_example:
+      img: file
+    input_schema:
+      img: file
+    output_schema: {}
+         
+relations:
+  - from: s3_connector
+    to: data_preprocessing
+  - from: s3_connector
+    to: batch_predict    
+  - from: data_preprocessing
+    to: cnn
+  - from: data_preprocessing
+    to: batch_predict
+  - from: cnn
+    to: batch_predict
+  - from: data_preprocessing
+    to: inference
+  - from: cnn
+    to: inference    

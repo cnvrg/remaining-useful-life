@@ -1,0 +1,50 @@
+title: RUL Data Preprocessing
+version: 1.0.0
+description: Encoding, missing value treatment and other preprocessing steps
+icon: python
+
+author: "cnvrg"
+author_email: "libhub@cnvrg.io"
+
+tags:
+  - training
+command: python3 data_preprocessing.py
+
+requirements:
+  cpu: 3.5
+  memory: 8
+  gpu: 0
+  hpu: 0
+
+image: cnvrg/cnvrg:v5.0
+language: python3
+
+arguments:
+  - key: X_train
+    type: 'categorical'
+    values:
+      - '/input/s3_connector/remaining_useful_life_data/raw_train_data.csv'
+  - key: common_letter_numeric
+    type: 'categorical'
+    values:
+      - 's'
+  - key: numeric_features
+    type: 'categorical'
+    values:
+      - 'garbage999'
+  - key: meta_columns
+    type: 'categorical'
+    values:
+      - '""id,cycle'
+  - key: sequence_length
+    type: 'categorical'
+    values:
+      - '"50"'   
+  - key: upper_limit
+    type: 'categorical'
+    values:
+      - '45'  
+  - key: lower_limit
+    type: 'categorical'
+    values:
+      - '15'        

@@ -1,0 +1,42 @@
+title: RUL CNN
+version: 1.0.0
+description: Implementation of CNN
+icon: python
+
+author: "cnvrg"
+author_email: "libhub@cnvrg.io"
+
+tags:
+  - training
+command: python3 cnn.py
+
+requirements:
+  cpu: 3.5
+  memory: 15.5
+  gpu: 0
+  hpu: 0
+
+image: cnvrg/cnvrg:v5.0
+language: python3
+
+arguments:
+  - key: x_train
+    type: 'categorical'
+    values:
+      - '/input/data_preprocessing/x_train'
+  - key: y_train
+    type: 'categorical'
+    values:
+      - '/input/data_preprocessing/y_train'     
+  - key: batch_size
+    type: 'categorical'
+    values:
+      - '512'
+  - key: epochs
+    type: 'categorical'
+    values:
+      - '25'      
+  - key: shape_data
+    type: 'categorical'
+    values:
+      - '/input/data_preprocessing/shape_data.csv' 

@@ -1,0 +1,52 @@
+title: RUL Inference
+version: 1.0.0
+description: Predicting Remaining  Life of a machine
+long_description: Find the remaining life of a machine using CNN
+author: "cnvrg"
+author_email: "libhub@cnvrg.io"
+
+tags:
+  - inference
+
+tasks:
+  - title: inference
+    top: 400
+    left: 300
+ 
+    type: deploy
+
+    library: rul-inference
+    library_version: 1.0.0
+
+    command: python3 predict.py
+    kind: webservice
+    requirements:
+      cpu: 3.5
+      memory: 8
+      gpu: 0
+      hpu: 0
+
+    image: cnvrg/cnvrg:v5.0
+    language: python3
+
+    accept_files: false
+
+    file_name: predict.py
+    flask_config:
+    - key: DEBUG
+      value: 'True'
+    - key: TESTING
+      value: 'True'
+    function_name: predict
+    gunicorn_config:
+      - key: workers
+        value: '1'
+    prep_file: ''
+    prep_function: ''
+    input_example:
+      img: file
+    input_schema:
+      img: file
+    output_schema: {}
+      
+relations: []

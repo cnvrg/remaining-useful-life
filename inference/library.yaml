@@ -1,0 +1,42 @@
+title: RUL Inference
+version: 1.0.0
+description: Endpoint
+icon: python
+author: "cnvrg"
+author_email: "libhub@cnvrg.io"
+tags:
+  - inference
+
+kind: webservice
+
+command: python3 predict.py
+
+requirements:
+  cpu: 3.5
+  memory: 8
+  gpu: 0
+  hpu: 0
+
+image: cnvrg/cnvrg:v5.0
+
+language: python3
+
+arguments:
+  accept_files: True
+  file_name: predict.py
+  flask_config:
+  - key: DEBUG
+    value: 'True'
+  - key: TESTING
+    value: 'True'
+  function_name: predict
+  gunicorn_config:
+    - key: workers
+      value: '1'
+  prep_file: ''
+  prep_function: ''
+  input_example:
+    img: file
+  input_schema:
+    img: file
+  output_schema: {}         
