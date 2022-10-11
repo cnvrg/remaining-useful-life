@@ -1,12 +1,12 @@
-'''Batch predict'''
+'''Batch code to predict remaining useful life of multiple machines'''
 # pylint: disable=C0103
 # pylint: disable=C0116
 # pylint: disable=W0401
 # pylint: disable=E0611
 # pylint: disable=E0401
 # pylint: disable=E1101
-# pylint: disable=E1137
-# pylint: disable=E1136
+# pylint: disable=C0301
+# pylint: disable=W0703
 import warnings
 import argparse
 import os
@@ -17,7 +17,6 @@ import numpy as np
 import pandas as pd
 warnings.filterwarnings(action='ignore')
 cnvrg_workdir = os.environ.get("CNVRG_WORKDIR", "/cnvrg")
-
 #########parser arguments#############
 parser = argparse.ArgumentParser(description="""Preprocessor""")
 parser.add_argument(
@@ -53,7 +52,6 @@ meta_columns = cols['meta_cols'].tolist()
 upper_limit = int(cols.loc[0, 'cycles'])
 lower_limit = int(cols.loc[1, 'cycles'])
 #########parser arguments#############
-
 
 def data_preprocessing(x_test_data, num_col):
     '''
@@ -138,7 +136,7 @@ if __name__ == '__main__':
     ### SCALE TEST DATA ###
     test_data, sequence_cols = scaling_data(
         test_data, numeric_features, meta_columns)
-    result_df = pd.DataFrame(columns=[['ID', 'Prediction']])
+    result_df = pd.DataFrame()
     for i in test_data.id.unique():
         # for each id in test data
         try:
@@ -157,25 +155,34 @@ if __name__ == '__main__':
             model.predict(x_test_img)
             cnn_predicted = model.predict(x_test_img)
             cnn_predicted_df = pd.DataFrame(cnn_predicted)
+            cnn_predicted_df.to_csv(cnvrg_workdir + '/cnn_predicted_df.csv', index=False)
+
+            cnn_predicted_df.rename(columns = {0:'>{} Cycles'.format(upper_limit),
+                                               1:'{}-{} Cycles'.format(lower_limit,upper_limit),
+                                               2:'<{} Cycles'.format(lower_limit)}, inplace = True)
+
+            cnn_predicted_df[cnn_predicted_df.columns] = round(cnn_predicted_df[cnn_predicted_df.columns]*100,2)
             result = cnn_predicted_df.iloc[-1, :].idxmax()
-            print(result)
-            if result == 0:
+            temp_df = cnn_predicted_df.tail(1)
+            if result == '>{} Cycles'.format(upper_limit):
                 j = 'More than {} cycles left'.format(upper_limit)
-            elif result == 1:
+            elif result == '{}-{} Cycles'.format(lower_limit,upper_limit):
                 j = '{} to {} cycles left'.format(lower_limit,upper_limit)
-            elif result == 2:
+            elif result == '<{} Cycles'.format(lower_limit):
                 j = 'Less than {} cycles left'.format(lower_limit)
-            dic = {'id': i, 'prediction': j}
-            print(dic)
-            temp_df = pd.DataFrame(columns=[['ID', 'Prediction']])
-            temp_df.loc[0, 'ID'] = i
-            temp_df.loc[0, 'Prediction'] = j
+            #dic = {'id': i, 'prediction': j}
+            temp_df['ID'] = i
+            temp_df['Prediction'] = j
+            print(temp_df)
         except BaseException:
             print('id-{} has less rows than the defined sequence length'.format(i))
-            temp_df = pd.DataFrame(columns=[['ID', 'Prediction']])
-            temp_df.loc[0, 'ID'] = i
-            temp_df.loc[0,
-                        'Prediction'] = 'id-{} has less rows than the defined sequence length'.format(i)
-
+            temp_df = pd.DataFrame()
+            temp_df.loc[0,'>{} Cycles'.format(upper_limit)] = np.nan
+            temp_df.loc[0,'{}-{} Cycles'.format(lower_limit,upper_limit)] = np.nan
+            temp_df.loc[0,'<{} Cycles'.format(lower_limit)] = np.nan
+            temp_df.loc[0,'ID'] = i
+            temp_df.loc[0,'Prediction'] = 'id-{} has less rows than the defined sequence length'.format(i)
+            print(temp_df)
         result_df = result_df.append(temp_df)
     result_df.to_csv(cnvrg_workdir + '/predicted_data.csv', index=False)
+    result_df.to_csv('predicted_data.csv', index=False)
