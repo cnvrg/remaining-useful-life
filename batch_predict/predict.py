@@ -1,12 +1,12 @@
-'''Batch code to predict remaining useful life of multiple machines'''
+'''Batch predict'''
 # pylint: disable=C0103
 # pylint: disable=C0116
 # pylint: disable=W0401
 # pylint: disable=E0611
 # pylint: disable=E0401
 # pylint: disable=E1101
-# pylint: disable=C0301
-# pylint: disable=W0703
+# pylint: disable=E1137
+# pylint: disable=E1136
 import warnings
 import argparse
 import os
@@ -154,13 +154,9 @@ if __name__ == '__main__':
             # predict
             model.predict(x_test_img)
             cnn_predicted = model.predict(x_test_img)
-            cnn_predicted_df = pd.DataFrame(cnn_predicted)
-            cnn_predicted_df.to_csv(cnvrg_workdir + '/cnn_predicted_df.csv', index=False)
-
-            cnn_predicted_df.rename(columns = {0:'>{} Cycles'.format(upper_limit),
-                                               1:'{}-{} Cycles'.format(lower_limit,upper_limit),
-                                               2:'<{} Cycles'.format(lower_limit)}, inplace = True)
-
+            cnn_predicted_df = pd.DataFrame(cnn_predicted)            
+            cnn_predicted_df.rename(columns = {0:'>{} Cycles'.format(upper_limit), 1:'{}-{} Cycles'.format(lower_limit,upper_limit), 2:'<{} Cycles'.format(lower_limit)}, inplace = True)
+            
             cnn_predicted_df[cnn_predicted_df.columns] = round(cnn_predicted_df[cnn_predicted_df.columns]*100,2)
             result = cnn_predicted_df.iloc[-1, :].idxmax()
             temp_df = cnn_predicted_df.tail(1)
@@ -184,5 +180,6 @@ if __name__ == '__main__':
             temp_df.loc[0,'Prediction'] = 'id-{} has less rows than the defined sequence length'.format(i)
             print(temp_df)
         result_df = result_df.append(temp_df)
+    
+    result_df = result_df[['ID','Prediction','>{} Cycles'.format(upper_limit),'{}-{} Cycles'.format(lower_limit,upper_limit),'<{} Cycles'.format(lower_limit)]]
     result_df.to_csv(cnvrg_workdir + '/predicted_data.csv', index=False)
-    result_df.to_csv('predicted_data.csv', index=False)
