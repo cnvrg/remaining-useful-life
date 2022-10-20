@@ -51,6 +51,7 @@ numeric_features = cols['cols'].tolist()
 meta_columns = cols['meta_cols'].tolist()
 upper_limit = int(cols.loc[0, 'cycles'])
 lower_limit = int(cols.loc[1, 'cycles'])
+seq_length = int(cols.loc[0, 'sequence_length'])
 #########parser arguments#############
 
 def data_preprocessing(x_test_data, num_col):
@@ -66,7 +67,7 @@ def data_preprocessing(x_test_data, num_col):
     '''
     test_df = x_test_data
     test_df.head(3)
-    sequence_length = 50
+    sequence_length = seq_length
 
     def gen_sequence(id_df, seq_length, seq_cols):
 
