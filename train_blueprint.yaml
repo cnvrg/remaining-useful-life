@@ -1,4 +1,4 @@
-title: RUL Train Inference
+title: RUL Train
 version: 1.0.0
 description: Training RUL Model to find out which machines are likely to fail soon
 long_description: This blueprint predicts the remaining useful life of a machine based on the readings from sensors
@@ -134,7 +134,11 @@ tasks:
       - key: epochs
         type: 'categorical'
         values:
-          - '25'          
+          - '25'     
+      - key: seed
+        type: 'categorical'
+        values:
+          - '58'           
       - key: shape_data
         type: 'categorical'
         values:
