@@ -106,6 +106,14 @@ if __name__ == '__main__':
         help="""cnn model fit arguments""",
     )
     parser.add_argument(
+        "--seed",
+        action="store",
+        dest="seed",
+        default="58",
+        required=True,
+        help="""set seed""",
+    )    
+    parser.add_argument(
         "--shape_data",
         action="store",
         dest="shape_data",
@@ -123,6 +131,7 @@ if __name__ == '__main__':
     shape_data = pd.read_csv(shape_data)
     x_shape = int(shape_data.loc[0, 'shape'])
     sequence_length = int(shape_data.loc[0, 'sequence_length'])
+    seed = int(args.seed)
     print(x_shape)
     #########parser arguments#############
     
@@ -161,7 +170,7 @@ if __name__ == '__main__':
 
     print(model.summary())
 
-    set_seed(48)
+    set_seed(seed)
 
     es = EarlyStopping(
         monitor='val_accuracy',
