@@ -35,7 +35,11 @@ arguments:
   - key: epochs
     type: 'categorical'
     values:
-      - '25'      
+      - '25'
+  - key: seed
+    type: 'categorical'
+    values:
+      - '58'        
   - key: shape_data
     type: 'categorical'
     values:
