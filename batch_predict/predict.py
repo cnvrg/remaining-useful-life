@@ -1,12 +1,4 @@
 '''Batch predict'''
-# pylint: disable=C0103
-# pylint: disable=C0116
-# pylint: disable=W0401
-# pylint: disable=E0611
-# pylint: disable=E0401
-# pylint: disable=E1101
-# pylint: disable=E1137
-# pylint: disable=E1136
 import warnings
 import argparse
 import os
@@ -17,44 +9,8 @@ import numpy as np
 import pandas as pd
 warnings.filterwarnings(action='ignore')
 cnvrg_workdir = os.environ.get("CNVRG_WORKDIR", "/cnvrg")
-#########parser arguments#############
-parser = argparse.ArgumentParser(description="""Preprocessor""")
-parser.add_argument(
-    "--x_test",
-    action="store",
-    dest="x_test",
-    default="/input/s3_connector/remaining_useful_life_data/raw_test_data.csv",
-    required=True,
-    help="""x_test""",
-)
-parser.add_argument(
-    "--cnn",
-    action="store",
-    dest="cnn",
-    default="/input/cnn/cnn_model.h5",
-    required=True,
-    help="""cnn""",
-)
-parser.add_argument(
-    "--shape_data",
-    action="store",
-    dest="shape_data",
-    default="/input/data_preprocessing/shape_data.csv",
-    required=True,
-    help="""shape_data""",
-)
-args = parser.parse_args()
-test_data = pd.read_csv(args.x_test)
-cnn = args.cnn
-cols = pd.read_csv(args.shape_data)
-numeric_features = cols['cols'].tolist()
-meta_columns = cols['meta_cols'].tolist()
-upper_limit = int(cols.loc[0, 'cycles'])
-lower_limit = int(cols.loc[1, 'cycles'])
-seq_length = int(cols.loc[0, 'sequence_length'])
-#########parser arguments#############
 
-def data_preprocessing(x_test_data, num_col):
+def data_preprocessing(x_test_data, num_col, seq_len):
     '''
     Parameters
     ----------
@@ -67,7 +23,7 @@ def data_preprocessing(x_test_data, num_col):
     '''
     test_df = x_test_data
     test_df.head(3)
-    sequence_length = seq_length
+    sequence_length = seq_len
 
     def gen_sequence(id_df, seq_length, seq_cols):
 
@@ -133,6 +89,43 @@ def scaling_data(raw_test_data, num_feat, meta_cols):
 
 
 if __name__ == '__main__':
+    
+    #########parser arguments#############
+    parser = argparse.ArgumentParser(description="""Preprocessor""")
+    parser.add_argument(
+        "--x_test",
+        action="store",
+        dest="x_test",
+        default="/input/s3_connector/remaining_useful_life_data/raw_test_data.csv",
+        required=True,
+        help="""x_test""",
+    )
+    parser.add_argument(
+        "--cnn",
+        action="store",
+        dest="cnn",
+        default="/input/cnn/cnn_model.h5",
+        required=True,
+        help="""cnn""",
+    )
+    parser.add_argument(
+        "--shape_data",
+        action="store",
+        dest="shape_data",
+        default="/input/data_preprocessing/shape_data.csv",
+        required=True,
+        help="""shape_data""",
+    )
+    args = parser.parse_args()
+    test_data = pd.read_csv(args.x_test)
+    cnn = args.cnn
+    cols = pd.read_csv(args.shape_data)
+    numeric_features = cols['cols'].tolist()
+    meta_columns = cols['meta_cols'].tolist()
+    upper_limit = int(cols.loc[0, 'cycles'])
+    lower_limit = int(cols.loc[1, 'cycles'])
+    seq_length = int(cols.loc[0,'sequence_length'])
+    #########parser arguments#############
 
     ### SCALE TEST DATA ###
     test_data, sequence_cols = scaling_data(
@@ -144,7 +137,7 @@ if __name__ == '__main__':
             x_test = test_data[test_data['id'] == i]
             x_test.reset_index(inplace=True)
 
-            data = data_preprocessing(x_test, sequence_cols)
+            data = data_preprocessing(x_test, sequence_cols, seq_length)
             print(data.shape)
             x_test_img = np.apply_along_axis(
                 rec_plot, 1, data).astype('float16')
