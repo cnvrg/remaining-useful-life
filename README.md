@@ -1,3 +1,5 @@
+# Remaining-Useful-Life
+
 You can use this blueprint to clean and validate data in order to further train cnn model to predict results for if a machine is likely to fail within given cycles or not using your own customized dataset. In order to clean the data you will be needed to provide: --raw_train_data raw data uploaded by the user on the platform --common_letter_numeric get the name of the id column by the user --label_encoding_cols list of columns to be label encoded by the user --scaler the common letter in all numeric variables --numeric_features list of numeric features --meta_columns columns other than the numeric features --sequence_length length of the sequence --upper_limit upper limit of cycles --lower_limit lower limit of cycles
 
 You would need to provide 1 folder in s3 where you can keep your training data
@@ -26,4 +28,3 @@ Go to the 'Serving' tab in the project and look for your endpoint
 You can use the Try it Live section with a data point similar to your input data (in terms of variables and data types) to check your model
 You can also integrate your API with your code using the integration panel at the bottom of the page
 Congrats! You have trained and deployed a custom model that detects the number of cycles under which the machine is going to fail# Remaining-Useful-Life
-# Remaining-Useful-Life
