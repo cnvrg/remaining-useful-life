@@ -1,7 +1,7 @@
 title: RUL Inference
 version: 1.0.0
-description: Predicting Remaining  Life of a machine
-long_description: Find the remaining life of a machine using CNN
+description: Predict when a company asset is likely to fail within given cycles using a pretrained CNN and a custom dataset
+long_description: Predict when a company asset like a machine is likely to fail within given cycles using a pretrained CNN and a custom dataset.
 author: "cnvrg"
 author_email: "libhub@cnvrg.io"
 

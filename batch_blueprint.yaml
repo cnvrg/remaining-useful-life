@@ -1,7 +1,7 @@
 title: RUL Batch 
 version: 1.0.0
-description: Training RUL Model to find out which machines are likely to fail soon
-long_description: This blueprint predicts the remaining useful life of a machine based on the readings from sensors
+description: Run in batch mode a pretrained CNN model with a CSV-formatted dataset to predict when a company asset is likely to fail within given cycles
+long_description: Run in batch mode a pretrained convolutional neural network (CNN) model with a customized CSV-formatted dataset to predict when a company asset is likely to fail within given cycles.
 
 author: "cnvrg"
 author_email: "libhub@cnvrg.io"

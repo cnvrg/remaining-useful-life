@@ -1,28 +1,50 @@
-You can use this blueprint to clean and validate data in order to further train cnn model to predict results for if a machine is likely to fail within given cycles or not using your own customized dataset. In order to clean the data you will be needed to provide: --raw_train_data raw data uploaded by the user on the platform --common_letter_numeric get the name of the id column by the user --label_encoding_cols list of columns to be label encoded by the user --scaler the common letter in all numeric variables --numeric_features list of numeric features --meta_columns columns other than the numeric features --sequence_length length of the sequence --upper_limit upper limit of cycles --lower_limit lower limit of cycles
+Use this blueprint to tailor-train a convolutional neural network (CNN) model with your customized dataset to predict when a company asset is likely to fail within given cycles.
 
-You would need to provide 1 folder in s3 where you can keep your training data
+To clean and validate the data on which to further train the model, provide one folder in the S3 Connector containing your raw training data. Inputs to further train the CNN model are placed in a remaining_useful_life folder containing the training data `raw_train_data.csv` file and the test data `raw_test_data.csv` file on which to make predictions. This blueprint also establishes an endpoint that can be used to predict RUL cycles based on the newly trained model.
 
-remaining_useful_life: Folder containing the training data "raw_train_data.csv" and the test data file on which to predict, "raw_test_data.csv"
-Directions for use:
+Complete the following steps to train a RUL-predictor model:
+1. Click the **Use Blueprint** button. The cnvrg Blueprint Flow page displays.
+2. In the flow, click the **S3 Connector** task to display its dialog.
+   * Within the **Parameters** tab, provide the following Key-Value pair information:
+     - Key: `bucketname` - Value: enter the data bucket name
+     - Key: `prefix` - Value: provide the main path to the CVS file folder
+   * Click the **Advanced** tab to change resources to run the blueprint, as required.
+3. Return to the flow and click the **Data Preprocessing** task to display its dialog.
+   * Within the **Parameters** tab, provide the following Key-Value pair information:
+     * Key: `--raw_train_data` – Value: provide the path to the S3 location with the training data in the following format: `/input/s3_connector/remaining_useful_life_data/raw_train_data.csv`
+     * Key: `--common_letter_numeric` – Value: provide the name of the ID column
+     * Key: `--numeric_features` – Value: list the numeric features in the data to be scaled or labeled
+     * Key: `--meta_columns` – Value: identify columns other than the numeric features such as ID and cycle
+     * Key: `--sequence_length` – Value: enter the length of the sequence
+     * Key: `--upper_limit` – Value: provide the upper limit of cycles
+     * Key: `--lower_limit` – Value: provide the lower limit of cycles
+     
+     NOTE: You can use the prebuilt example data paths provided.
 
-Click on Use Blueprint button
+   * Click the **Advanced** tab to change resources to run the blueprint, as required.
+4. Return to the flow and click the **CNN (Train)** task to display its dialog.
+   * Within the **Parameters** tab, provide the following Key-Value pair information:
+     * Key: `--x_train` – Value: provide the path to the preprocessed training data in the following format: `/input/data_preprocessing/x_train`
+     * Key: `--y_train` – Value: provide the path to preprocessed test data in the following format: `/input/data_preprocessing/y_train`
+     * Key: `--batch_size` – Value: provide the batch size to train the CNN model
+     * Key: -`-epochs` – Value: provide the path the number of epochs to train the CNN model
+     * Key: `--seed` – Value: provide the value to initialize the random number generator in the CNN model
+     * Key: `--shape_data` – Value: provide the dataframe containing multiple variables to batch predict from data preprocessing block.
+    
+    NOTE: You can use the prebuilt example data paths provided. 
 
-You will be redirected to your blueprint flow page
+   * Click the **Advanced** tab to change resources to run the blueprint, as required.
+ 5. Return to the flow and click the **Batch Predict** task to display its dialog.
+   * Within the **Parameters** tab, provide the following Key-Value pair information:
+     * Key: `--x_test` – Value: provide the path to the test dataset in the following format: /input/s3_connector/remaining_useful_life_data/raw_test_data.csv
+     * Key: `--cnn` – Value: provide the path to trained model in the following format: /input/cnn/cnn_model.h5
+     * Key: `--shape_data` – Value: provide the shape dataframe path in the following format: /input/data_preprocessing/shape_data.csv
+   * Click the **Advanced** tab to change resources to run the blueprint, as required.
+ 5.	Click the **Run** button. The cnvrg software launches the training blueprint as set of experiments, generating a trained RUL-predictor model and deploying it as a new API endpoint.
+6. Track the blueprint's real-time progress in its Experiments page, which displays artifacts such as logs, metrics, hyperparameters, and algorithms.
+7. Click the **Serving** tab in the project and locate your endpoint.
+8. Complete one or both of the following options:
+   * Use the Try it Live section with any data to check the model's predictions.
+   * Use the bottom integration panel to integrate your API with your code by copying in your code snippet.
 
-In the flow, edit the following tasks to provide your data:
-
-In the S3 Connector task:
-
-Under the bucketname parameter provide the bucket name of the data
-Under the prefix parameter provide the main path to where the input file is located
-In the Data-Preprocessing task:
-
-Under the raw_train_data parameter provide the path to the input folder including the prefix you provided in the S3 Connector, it should look like: /input/s3_connector/<prefix>/raw_train_data.csv
-NOTE: You can use prebuilt data examples paths that are already provided
-
-Click on the 'Run Flow' button
-In a few minutes you will train a new rul model and deploy as a new API endpoint
-Go to the 'Serving' tab in the project and look for your endpoint
-You can use the Try it Live section with a data point similar to your input data (in terms of variables and data types) to check your model
-You can also integrate your API with your code using the integration panel at the bottom of the page
-Congrats! You have trained and deployed a custom model that detects the number of cycles under which the machine is going to fail
+A custom model and API endpoint, which can predict the number of cycles until an asset fails, have now been trained and deployed. If also using the Batch Predict task, a trained RUL-predictor model that makes batch predictions has now been deployed. To learn how this blueprint was created, click [here](https://github.com/cnvrg/remaining-useful-life).
