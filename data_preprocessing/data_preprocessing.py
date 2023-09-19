@@ -123,7 +123,7 @@ if __name__ == '__main__':
     meta_columns = args.meta_columns.split(',')
     UPPER_LIMIT = int(args.upper_limit)
     LOWER_LIMIT = int(args.lower_limit)
-    if numeric_features[0] == 'garbage999':
+    if numeric_features[0] == 'sensor':
         numeric_features = []
     sequence_length = int(args.sequence_length)
     #########parser arguments#############
