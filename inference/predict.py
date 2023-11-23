@@ -1,4 +1,3 @@
-'''Endpoint'''
 import argparse
 import os
 import random
@@ -27,10 +26,6 @@ import base64
 import json
 from io import BytesIO
 
-FILES = ['cnn_model.h5', 'shape_data.csv']
-
-BASE_FOLDER_URL = "https://libhub-readme.s3.us-west-2.amazonaws.com/remaining_useful_life_data/"
-
 
 def download_model_files(FILES):
     """
@@ -47,8 +42,20 @@ def download_model_files(FILES):
             with open(f1, "wb") as fb:
                 fb.write(response.content)
 
-
-download_model_files(FILES)
+def download_test_file(URL):
+    """
+    Downloads the model files if they are not already present or
+    pulled as artifacts from a previous train task
+    """
+    current_dir = str(pathlib.Path(__file__).parent.resolve())
+    if not os.path.exists(
+            current_dir + f'/{URL}') and not os.path.exists('/input/cnn/' + URL):
+        print(f'Downloading file: {URL}')
+        response = requests.get(URL)
+        f = URL.split("/")[-1]
+        f1 = os.path.join(current_dir, f)
+        with open(f1, "wb") as fb:
+            fb.write(response.content)
 
 def data_preprocessing(x_test_data, num_col, seq_len):
     '''
@@ -131,12 +138,16 @@ def scaling_data(raw_test_data, num_feat, meta_cols):
 def predict(data):
 ### SCALE TEST DATA ###
     print('Running Stand Alone Endpoint')
+    FILES = ['cnn_model.h5', 'shape_data.csv']
+    BASE_FOLDER_URL = "https://libhub-readme.s3.us-west-2.amazonaws.com/remaining_useful_life_data/"
     script_dir = pathlib.Path(__file__).parent.resolve()
-    test_file = list(str(data['file']))
-    download_model_files(test_file)
+    download_model_files(FILES)
+    test_file = str(data['file'])
+    download_test_file(test_file)
 
     #x_test = pd.read_csv(os.path.join(script_dir,'endpoint_test_data.csv'))
-    x_test = pd.read_csv(os.path.join(script_dir,str(data['file'])))
+    f = test_file.split("/")[-1]
+    x_test = pd.read_csv(os.path.join(script_dir,f))
     cnn = os.path.join(script_dir,'cnn_model.h5')
     cols = pd.read_csv(os.path.join(script_dir,'shape_data.csv'))
     numeric_features = cols['cols'].tolist()
@@ -144,47 +155,52 @@ def predict(data):
     seq_len = int(cols.loc[0,'sequence_length'])
     upper_limit = int(cols.loc[0, 'cycles'])
     lower_limit = int(cols.loc[1, 'cycles'])
-    id_col = x_test.loc[0,'id']
+    id_col = x_test.id.unique()
     
     #predict(x_test, numeric_features, meta_columns, seq_length)
     test_data, sequence_cols = scaling_data(
         x_test, numeric_features, meta_columns)
     result_df = pd.DataFrame()
     print(test_data.columns)
+    main_dic = []
     dic = {}
-    #for i in test_data.id.unique():
+    for i in id_col:
         # for each id in test data
-    try:
-        #x_test = test_data[test_data['id'] == i]
-        x_test.reset_index(inplace=True)
+        #'dict_'+vars()[i] = {}
+        try:
+            if len(id_col)<=1:
+                test_data['id'] = id_col[0]
+            x_test = test_data[test_data['id'] == i]
+            x_test.reset_index(inplace=True)
 
-        data = data_preprocessing(x_test, sequence_cols, seq_len)
-        print(data.shape)
-        x_test_img = np.apply_along_axis(
-            rec_plot, 1, data).astype('float16')
+            data = data_preprocessing(x_test, sequence_cols, seq_len)
+            print(data.shape)
+            x_test_img = np.apply_along_axis(
+                rec_plot, 1, data).astype('float16')
 
-        # load model
-        model = load_model(cnn)
+            # load model
+            model = load_model(cnn)
 
-        # predict
-        model.predict(x_test_img)
-        cnn_predicted = model.predict(x_test_img)
-        cnn_predicted_df = pd.DataFrame(cnn_predicted)            
-        cnn_predicted_df.rename(columns = {0:'>{} Cycles'.format(upper_limit), 1:'{}-{} Cycles'.format(lower_limit,upper_limit), 2:'<{} Cycles'.format(lower_limit)}, inplace = True)
+            # predict
+            model.predict(x_test_img)
+            cnn_predicted = model.predict(x_test_img)
+            cnn_predicted_df = pd.DataFrame(cnn_predicted)            
+            cnn_predicted_df.rename(columns = {0:'>{} Cycles'.format(upper_limit), 1:'{}-{} Cycles'.format(lower_limit,upper_limit), 2:'<{} Cycles'.format(lower_limit)}, inplace = True)
 
-        cnn_predicted_df[cnn_predicted_df.columns] = round(cnn_predicted_df[cnn_predicted_df.columns]*100,2)
-        result = cnn_predicted_df.iloc[-1, :].idxmax()
-        if result == '>{} Cycles'.format(upper_limit):
-            j = 'More than {} cycles left'.format(upper_limit)
-        elif result == '{}-{} Cycles'.format(lower_limit,upper_limit):
-            j = '{} to {} cycles left'.format(lower_limit,upper_limit)
-        elif result == '<{} Cycles'.format(lower_limit):
-            j = 'Less than {} cycles left'.format(lower_limit)
-        dic = {'id': str(id_col) , 'prediction': j}
-        print(dic)
-        
-    except BaseException as e:
-        print(e)
-        print('machine has less rows than the defined sequence length')
-        dic = {'id': str(id_col) , 'prediction': 'machine has less rows than the defined sequence length', 'error': str(e)}
+            cnn_predicted_df[cnn_predicted_df.columns] = round(cnn_predicted_df[cnn_predicted_df.columns]*100,2)
+            result = cnn_predicted_df.iloc[-1, :].idxmax()
+            if result == '>{} Cycles'.format(upper_limit):
+                j = 'More than {} cycles left'.format(upper_limit)
+            elif result == '{}-{} Cycles'.format(lower_limit,upper_limit):
+                j = '{} to {} cycles left'.format(lower_limit,upper_limit)
+            elif result == '<{} Cycles'.format(lower_limit):
+                j = 'Less than {} cycles left'.format(lower_limit)
+            dic['id -> {}'.format(str(i))] = 'prediction -> {}'.format(j)
+            #print(dic)
+
+        except BaseException as e:
+            dic['id -> {}'.format(i)] = 'prediction -> machine has less rows than the defined sequence length'
     return dic
+
+#text = {'file' : 'https://libhub-readme.s3.us-west-2.amazonaws.com/remaining_useful_life_data/endpoint_test_data.csv'}
+#print(predict(text))

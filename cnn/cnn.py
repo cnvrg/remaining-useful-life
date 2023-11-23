@@ -184,6 +184,7 @@ if __name__ == '__main__':
         y_train,
         batch_size=batch_size,
         epochs=epochs,
+        callbacks=[es],
         validation_split=0.2,
         verbose=2)
 
